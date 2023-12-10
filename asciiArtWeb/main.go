@@ -38,6 +38,15 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, nil)
 }
 
+func isValidASCII(s string) error {
+	for _, r := range s {
+		if r < 32 || r > 126 {
+			return fmt.Errorf("invalid character: %q", r)
+		}
+	}
+	return nil
+}
+
 func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse JSON from the request body
 	var requestData ASCIIRequest
@@ -46,12 +55,27 @@ func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
+
+	// validate ASCII characters
+	err = isValidASCII(requestData.Text)
+	if err != nil {
+		http.Error(w, "Bad Request - "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	// Get ASCII art
 	bannerFilename := _const.DefaultBannerName + ".txt"
 	if requestData.Style == "shadow" || requestData.Style == "thinkertoy" {
 		bannerFilename = requestData.Style + ".txt"
 	}
 	asciiArt := art.СonvertToAsciiArt(requestData.Text, _const.ResourcesPath+bannerFilename)
+
+	// Check that ASCII art was successfully generated
+	if asciiArt == "" {
+		http.Error(w, "Could not generate ASCII art", http.StatusInternalServerError)
+		return
+	}
+
 	// Respond with ASCII art in JSON format
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ASCIIResponse{Art: asciiArt})

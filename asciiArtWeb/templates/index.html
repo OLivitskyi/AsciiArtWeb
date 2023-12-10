@@ -55,8 +55,14 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ "text": text, "style": style }),
         })
-            .then(res => res.json())
-            .then(res => document.getElementById("output").textContent = res.art);
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error, status = ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(res => document.getElementById("output").textContent = `${res.art}`)
+            .catch(error => document.getElementById("output").textContent = error.message);
     }
 </script>
 </body>
