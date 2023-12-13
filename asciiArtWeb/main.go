@@ -40,7 +40,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func isValidASCII(s string) error {
 	for _, r := range s {
-		if r < 32 || r > 126 {
+		if (r < 32 || r > 126) && r != '\n' {
 			return fmt.Errorf("invalid character: %q", r)
 		}
 	}
